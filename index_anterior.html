@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ServeAuto SmartCount 1.0</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+</script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0891b2;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --background: #f1f5f9;
+            --card: #ffffff;
+            --text: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--background); color: var(--text); line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 100%; padding: 0.5rem; margin: 0 auto; flex: 1; }
+        header { background-color: var(--primary); color: white; padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+        .header-content { display: flex; flex-direction: column; align-items: center; }
+        .app-title { font-size: 1.5rem; font-weight: bold; margin-bottom: .5rem; }
+        .app-version { font-size: .8rem; opacity: .9; }
+        .user-info { margin-top: 0.5rem; font-size: 0.9rem; }
+        .nav-tabs { display: flex; background-color: var(--primary); overflow-x: auto; padding: 0 .5rem; scrollbar-width: none; position: sticky; top: 84px; z-index: 99; }
+        .nav-tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: .8rem 1rem; color: rgba(255,255,255,.7); text-align: center; text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 500; }
+        .tab.active { color: #fff; border-bottom-color: #fff; }
+        .tab i { margin-right: .5rem; }
+        .tab-content { display: none; padding: 1rem; background-color: var(--card); border-radius: .5rem; margin: 1rem 0; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        .tab-content.active { display: block; }
+        .card { background-color: var(--card); border-radius: .5rem; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--dark); display: flex; align-items: center; }
+        .card-title i { margin-right: .5rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: .5rem; font-weight: 500; }
+        input, select, button { width: 100%; padding: .8rem; border: 1px solid #ddd; border-radius: .4rem; font-size: 1rem; }
+        button { background-color: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: 600; transition: background-color .3s; display: flex; justify-content: center; align-items: center; }
+        button i { margin-right: .5rem; }
+        button:hover { background-color: #1d4ed8; }
+        button:disabled { background-color: var(--secondary); cursor: not-allowed; }
+        button.success { background-color: var(--success); }
+        button.success:hover { background-color: #15803d; }
+        button.danger { background-color: var(--danger); }
+        button.danger:hover { background-color: #b91c1c; }
+        button.warning { background-color: var(--warning); }
+        button.warning:hover { background-color: #b45309; }
+        .progress-bar { height: 1.5rem; background-color: #e5e7eb; border-radius: .75rem; overflow: hidden; margin: 1rem 0; position: relative; }
+        .progress-fill { height: 100%; background-color: var(--success); border-radius: .75rem; transition: width .3s ease; }
+        .progress-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--dark); font-weight: 600; font-size: .9rem; }
+        .stats-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 1rem 0; }
+        .stat-box { background-color: var(--light); border-radius: .5rem; padding: 1rem; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: .8rem; color: var(--secondary); }
+        .message-area { background-color: #fef3c7; border-left: 4px solid var(--warning); padding: 1rem; margin: 1rem 0; border-radius: .25rem; }
+        .message-area.error { background-color: #fee2e2; border-left-color: var(--danger); }
+        .message-area.success { background-color: #dcfce7; border-left-color: var(--success); }
+        .product-list { max-height: 400px; overflow-y: auto; }
+        .product-item { display: flex; justify-content: space-between; padding: .8rem; border-bottom: 1px solid #e5e7eb; }
+        .product-item:last-child { border-bottom: none; }
+        .product-code { font-weight: 600; color: var(--dark); }
+        .product-desc { color: var(--secondary); font-size: .9rem; margin: .2rem 0; }
+        .product-count { display: flex; align-items: center; }
+        .count-badge { background-color: var(--primary); color: #fff; border-radius: 1rem; padding: .2rem .6rem; font-size: .8rem; font-weight: 600; }
+        .session-list { max-height: 400px; overflow-y: auto; }
+        .session-item { padding: 1rem; border-bottom: 1px solid #e5e7eb; }
+        .session-item:last-child { border-bottom: none; }
+        .session-name { font-weight: 600; color: var(--dark); }
+        .session-details { display: flex; justify-content: space-between; margin-top: .5rem; font-size: .8rem; color: var(--secondary); }
+        .session-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .session-action-btn { width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .hidden { display: none; }
+        .auth-container { max-width: 400px; margin: 2rem auto; padding: 2rem; background-color: var(--card); border-radius: .5rem; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+        .auth-tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; }
+        .auth-tab { flex: 1; text-align: center; padding: .8rem; cursor: pointer; border-bottom: 3px solid transparent; }
+        .auth-tab.active { border-bottom-color: var(--primary); font-weight: 600; color: var(--primary); }
+        .footer { text-align: center; padding: 1.5rem; color: var(--secondary); font-size: .8rem; margin-top: auto; background-color: var(--light); }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Style para a nova área de mensagem de importação */
+        #import-message-area { margin-top: 1rem; padding: .8rem; background-color: var(--light); color: var(--success); border-radius: .4rem; text-align: center; font-weight: 600; display: none; }
+        /* Style para o grid de bipagem avulsa */
+        #avulsa-scans-card { max-height: 250px; overflow-y: auto; }
+        #avulsa-scans-list .scan-item { display: flex; justify-content: space-between; padding: .6rem; border-bottom: 1px solid #e5e7eb; }
+        #avulsa-scans-list .scan-item:last-child { border-bottom: none; }
+        #avulsa-scans-list .scan-code { font-weight: 600; }
+        #avulsa-scans-list .scan-qty { background-color: var(--secondary); color: white; padding: .2rem .5rem; border-radius: .3rem; font-size: .8rem; }
+        /* Style para os checkboxes de exportação */
+        .export-fields-group { margin-top: 1.2rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: .4rem; }
+        .export-fields-group legend { font-weight: 600; padding: 0 .5rem; }
+        .export-fields-group .checkbox-container { display: flex; flex-direction: column; gap: .8rem; }
+        .export-fields-group .checkbox-item { display: flex; align-items: center; }
+        .export-fields-group .checkbox-item input { width: auto; margin-right: .8rem; }
+        @media (min-width: 768px) { .container { max-width: 750px; padding: 1rem; } .stats-container { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1024px) { .container { max-width: 980px; } }
+        @media (min-width: 1200px) { .container { max-width: 1140px; } }
+    
+/* ===== MENU HAMBÚRGUER ===== */
+.hamburger {
+  display: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  color: white;
+  z-index: 200;
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 260px;
+  height: 100%;
+  background: var(--dark);
+  color: white;
+  padding-top: 4rem;
+  transition: left 0.3s ease;
+  z-index: 150;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.4);
+}
+.sidebar.active {
+  left: 0;
+}
+.sidebar .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
+  font-size: 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+.sidebar .menu-item i {
+  font-size: 1.4rem;
+  width: 24px;
+  text-align: center;
+}
+.sidebar .menu-item:hover {
+  background: var(--primary);
+}
+/* Overlay com animação */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.0);
+  z-index: 140;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+.overlay.active {
+  background: rgba(0,0,0,0.5);
+  opacity: 1;
+  visibility: visible;
+}
+@media (max-width:768px){
+  .nav-tabs{display:none;}
+  .hamburger{display:block;}
+}
+
+</style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="header-content">
+                <div class="app-title">ServeAuto SmartCount</div>
+                <div class="app-version">1.0</div>
+                <div id="user-info" class="user-info hidden"></div>
+            </div>
+        </header>
+
+<div class="hamburger" id="hamburger"><i class="fas fa-bars"></i></div>
+
+<div class="sidebar" id="sidebar">
+  <a href="#" class="menu-item" data-tab="configuracao">⚙️ <span>Configuração</span></a>
+  <a href="#" class="menu-item" data-tab="contagem">📋 <span>Contagem</span></a>
+  <a href="#" class="menu-item" data-tab="bipagem">📦 <span>Bipagem</span></a>
+  <a href="#" class="menu-item" data-tab="produtos">📦 <span>Produtos</span></a>
+  <a href="#" class="menu-item" data-tab="exportar">⬇️ <span>Exportar</span></a>
+  <a href="#" class="menu-item" data-tab="historico">🕑 <span>Histórico</span></a>
+  <a href="#" class="menu-item" id="sidebar-logout">🚪 <span>Sair</span></a>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+
+        <div id="auth-section" class="auth-container">
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="login-tab">Login</div>
+                <div class="auth-tab" id="register-tab">Cadastro</div>
+            </div>
+
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" placeholder="Seu e-mail" />
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" placeholder="Sua senha" />
+                </div>
+                <button id="login-btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            </div>
+
+            <div id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="reg-name">Nome Completo</label>
+                    <input type="text" id="reg-name" placeholder="Seu nome completo" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">E-mail</label>
+                    <input type="email" id="reg-email" placeholder="Seu e-mail" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Senha</label>
+                    <input type="password" id="reg-password" placeholder="Sua senha (mín. 6 caracteres)" />
+                </div>
+                <button id="register-btn"><i class="fas fa-user-plus"></i> Cadastrar</button>
+            </div>
+
+            <div id="auth-message" class="message-area hidden"></div>
+        </div>
+
+        <div id="main-app" class="hidden">
+            <div class="nav-tabs">
+                <div class="tab active" data-tab="configuracao"><i class="fas fa-cog"></i> Configuração</div>
+                <div class="tab" data-tab="contagem"><i class="fas fa-clipboard-list"></i> Contagem</div>
+                <div class="tab" data-tab="bipagem"><i class="fas fa-barcode"></i> Bipagem</div>
+                <div class="tab" data-tab="produtos"><i class="fas fa-boxes"></i> Produtos</div>
+                <div class="tab" data-tab="exportar"><i class="fas fa-file-export"></i> Exportar</div>
+                <div class="tab" data-tab="historico"><i class="fas fa-history"></i> Histórico</div>
+                <div class="tab" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</div>
+            </div>
+
+            <div class="container">
+                <div id="configuracao" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-cog"></i> Configuração de Contagem</div>
+                        <div class="form-group">
+                            <label for="count-type">Tipo de Contagem</label>
+                            <select id="count-type">
+                                <option value="normal">Contagem com Arquivo</option>
+                                <option value="avulsa">Contagem Avulsa</option>
+                            </select>
+                        </div>
+                        <div id="file-import-section">
+                            <div class="form-group">
+                                <label for="csv-file">Importar Arquivo CSV</label>
+                                <input type="file" id="csv-file" accept=".csv" />
+                            </div>
+                            <button id="import-btn"><i class="fas fa-file-import"></i> Importar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="session-name">Descrição da Contagem</label>
+                            <input type="text" id="session-name" placeholder="Descrição da contagem" />
+                        </div>
+                        <div id="import-message-area"></div>
+                    </div>
+                </div>
+
+                <div id="contagem" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-play-circle"></i> Controle de Contagem</div>
+                        <button id="start-count-btn" class="success"><i class="fas fa-play"></i> Iniciar Contagem</button>
+                        <button id="end-count-btn" class="danger hidden"><i class="fas fa-stop"></i> Encerrar Contagem</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-chart-line"></i> Progresso da Contagem</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                            <div class="progress-text" id="progress-text">0%</div>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-box">
+                                <div class="stat-value" id="total-items">0</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value" id="counted-items">0</div>
+                                <div class="stat-label">Contados</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value" id="missing-items">0</div>
+                                <div class="stat-label">Faltando</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value" id="scanned-items">0</div>
+                                <div class="stat-label">Bipados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bipagem" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-barcode"></i> Área de Bipagem</div>
+                        <div class="form-group">
+                            <label for="barcode-input">Código de Barras</label>
+                            <input type="text" id="barcode-input" placeholder="Escaneie ou digite o código" autocomplete="off" />
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity-input">Quantidade (padrão: 1)</label>
+                            <input type="number" id="quantity-input" value="1" min="1" />
+                        </div>
+                        <button id="add-scan-btn"><i class="fas fa-plus-circle"></i> Adicionar</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-info-circle"></i> Área de Mensagens</div>
+                        <div id="message-area" class="message-area">
+                            <p>Nenhuma operação realizada ainda. Escaneie um código ou digite manualmente.</p>
+                        </div>
+                    </div>
+                    <div id="avulsa-scans-card" class="card hidden">
+                        <div class="card-title"><i class="fas fa-history"></i> Últimas Bipagens (Contagem Avulsa)</div>
+                        <div id="avulsa-scans-list">
+                            </div>
+                    </div>
+                </div>
+
+                <div id="produtos" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-boxes"></i> Lista de Produtos</div>
+                        <div id="products-list" class="product-list">
+                            <p id="no-products-msg">Nenhum produto importado ainda. Vá para a aba Configuração para importar um arquivo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="exportar" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-file-export"></i> Exportar Dados</div>
+                        <div class="form-group">
+                            <label for="export-format">Formato de Exportação</label>
+                            <select id="export-format">
+                                <option value="csv">CSV</option>
+                                <option value="txt">TXT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="export-type">Tipo de Exportação</label>
+                            <select id="export-type">
+                                <option value="grouped">Agrupado por código</option>
+                                <option value="detailed">Linha a linha</option>
+                            </select>
+                        </div>
+
+                        <div id="export-fields-grouped" class="export-fields-group">
+                            <legend>Campos para exportar (Agrupado)</legend>
+                            <div class="checkbox-container">
+                                <div class="checkbox-item"><input type="checkbox" id="export-grouped-codigo" data-field="codigo" checked disabled> <label for="export-grouped-codigo">Codigo</label></div>
+                                <div class="checkbox-item"><input type="checkbox" id="export-grouped-qtde" data-field="quantidade_contada" checked disabled> <label for="export-grouped-qtde">Quantidade Contada</label></div>
+                                <div class="checkbox-item"><input type="checkbox" id="export-grouped-desc" data-field="descricao"> <label for="export-grouped-desc">Descricao</label></div>
+                            </div>
+                        </div>
+
+                        <div id="export-fields-detailed" class="export-fields-group hidden">
+                            <legend>Campos para exportar (Linha a linha)</legend>
+                            <div class="checkbox-container">
+                                <div class="checkbox-item"><input type="checkbox" id="export-detailed-codigo" data-field="codigo" checked disabled> <label for="export-detailed-codigo">Codigo</label></div>
+                                <div class="checkbox-item"><input type="checkbox" id="export-detailed-qtde" data-field="quantity" checked disabled> <label for="export-detailed-qtde">Quantidade Contada</label></div>
+                                <div class="checkbox-item"><input type="checkbox" id="export-detailed-desc" data-field="description"> <label for="export-detailed-desc">Descricao</label></div>
+                                <div class="checkbox-item"><input type="checkbox" id="export-detailed-datetime" data-field="created_at"> <label for="export-detailed-datetime">Data/Hora</label></div>
+                            </div>
+                        </div>
+                        
+                        <button id="export-btn" class="success" style="margin-top: 1rem;"><i class="fas fa-download"></i> Exportar Sessão Atual</button>
+                    </div>
+                </div>
+
+                <div id="historico" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-history"></i> Sessões Anteriores</div>
+                        <div id="sessions-list" class="session-list">
+                            <p id="no-sessions-msg">Nenhuma sessão encontrada.</p>
+                        </div>
+                        <button id="clear-history-btn" class="danger"><i class="fas fa-trash"></i> Limpar Histórico Completo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">ServeAuto SmartCount 1.0 &copy; 2025 - Contagem Inteligente de Estoque</div>
+    </div>
+
+    <script>
+        // =============================
+        // Supabase: configuração + FIX
+        // =============================
+        const supabaseUrl = 'https://dkpqjtbrmxozynpxdurv.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcHFqdGJybXhvenlucHhkdXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjIyNDUsImV4cCI6MjA3MjIzODI0NX0.EVXv7iH70zDNb_vrILJMVb2ccBWFWA0sAU4CoPSRh54';
+
+        // FIX principal: não sombrear o objeto global `supabase`.
+        // Em vez de `const supabase = supabase.createClient(...)` (gera ReferenceError por TDZ),
+        // usamos outro nome (sb) e referenciamos via window.supabase.
+        const supabase = (window.supabase && window.supabase.createClient)
+            ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+            : null;
+
+        // =============================
+        // Estado do app
+        // =============================
+        let currentUser = null;
+        let currentSession = null;
+        let products = [];
+        let scans = [];
+        let userProfile = null;
+
+        // =============================
+        // Elementos
+        // =============================
+        const authSection = document.getElementById('auth-section');
+        const mainApp = document.getElementById('main-app');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const authMessage = document.getElementById('auth-message');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userInfoElement = document.getElementById('user-info');
+
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        async function initApp() {
+            setupEventListeners(); // garantir que botões funcionem mesmo se SDK falhar
+
+            if (!supabase) {
+                showAuthSection();
+                showAuthMessage('Falha ao carregar o SDK do Supabase. Verifique sua conexão ou a tag do script.', 'error');
+                return;
+            }
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const user = session.user;
+                    const { data: profile } = await supabase
+                        .from('user_profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile && profile.authorized) {
+                        currentUser = user;
+                        userProfile = profile;
+                        showMainApp();
+                        updateUserInfo();
+                        loadUserData();
+                    } else {
+                        await supabase.auth.signOut();
+                        showAuthSection();
+                    }
+                } else {
+                    showAuthSection();
+                }
+            } catch (err) {
+                console.error(err);
+                showAuthSection();
+                showAuthMessage('Não foi possível inicializar a sessão.', 'error');
+            }
+        }
+
+        function showAuthSection() {
+            authSection.classList.remove('hidden');
+            mainApp.classList.add('hidden');
+        }
+        function showMainApp() {
+            authSection.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+        }
+        
+        function updateUserInfo() {
+            if (currentUser && userProfile) {
+                userInfoElement.textContent = `Usuário: ${userProfile.name}`;
+                userInfoElement.classList.remove('hidden');
+            }
+        }
+
+        function setupEventListeners() {
+            // Abas de autenticação
+            loginTab.addEventListener('click', () => {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                authMessage.classList.add('hidden');
+            });
+            registerTab.addEventListener('click', () => {
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                authMessage.classList.add('hidden');
+            });
+
+            // Enter para enviar login/cadastro
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loginBtn.click();
+            });
+            document.getElementById('reg-password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') registerBtn.click();
+            });
+
+            // Botões de autenticação
+            loginBtn.addEventListener('click', handleLogin);
+            registerBtn.addEventListener('click', handleRegister);
+            if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+            // Abas principais
+            tabs.forEach((tab) => {
+                if (tab.id !== 'logout-btn') {
+                    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+                }
+            });
+
+            // Configuração
+            document.getElementById('count-type').addEventListener('change', toggleCountType);
+            document.getElementById('import-btn').addEventListener('click', handleImport);
+            document.getElementById('csv-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileName = file.name.replace(/\.csv$/i, '');
+                    document.getElementById('session-name').value = fileName;
+                }
+            });
+
+
+            // Contagem
+            document.getElementById('start-count-btn').addEventListener('click', startCounting);
+            document.getElementById('end-count-btn').addEventListener('click', endCounting);
+
+            // Bipagem
+            document.getElementById('barcode-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') document.getElementById('add-scan-btn').click();
+            });
+            document.getElementById('add-scan-btn').addEventListener('click', addScan);
+            
+            // Exportar
+            document.getElementById('export-btn').addEventListener('click', exportCurrentSessionData);
+            document.getElementById('export-type').addEventListener('change', (e) => {
+                const groupedFields = document.getElementById('export-fields-grouped');
+                const detailedFields = document.getElementById('export-fields-detailed');
+                if (e.target.value === 'grouped') {
+                    groupedFields.classList.remove('hidden');
+                    detailedFields.classList.add('hidden');
+                } else {
+                    groupedFields.classList.add('hidden');
+                    detailedFields.classList.remove('hidden');
+                }
+            });
+
+            // Histórico
+            document.getElementById('clear-history-btn').addEventListener('click', clearAllHistory);
+        }
+
+        async function handleLogin() {
+            if (!supabase) return showAuthMessage('SDK do Supabase indisponível.', 'error');
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            if (!email || !password) return showAuthMessage('Por favor, preencha todos os campos.', 'error');
+
+            loginBtn.innerHTML = '<div class="loading"></div> Entrando...';
+            loginBtn.disabled = true;
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                const { data: profile, error: profileError } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+                if (profileError || !profile || !profile.authorized) {
+                    showAuthMessage('Usuário não autorizado. Entre em contato com o administrador.', 'error');
+                    await supabase.auth.signOut();
+                    return;
+                }
+
+                await supabase.from('session_logs').insert([{ user_id: data.user.id, action: 'login' }]);
+                currentUser = data.user;
+                userProfile = profile;
+                showMainApp();
+                updateUserInfo();
+                loadUserData();
+            } catch (err) {
+                console.error(err);
+                showAuthMessage(err.message || 'Erro inesperado. Tente novamente.', 'error');
+            } finally {
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+                loginBtn.disabled = false;
+            }
+        }
+
+        async function handleRegister() {
+            if (!supabase) return showAuthMessage('SDK do Supabase indisponível.', 'error');
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            if (!name || !email || !password) return showAuthMessage('Por favor, preencha todos os campos.', 'error');
+            if (password.length < 6) return showAuthMessage('A senha deve ter pelo menos 6 caracteres.', 'error');
+
+            registerBtn.innerHTML = '<div class="loading"></div> Cadastrando...';
+            registerBtn.disabled = true;
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { name } },
+                });
+                if (error) throw error;
+
+                const userId = data?.user?.id;
+                if (userId) {
+                    const { error: profileError } = await supabase.from('user_profiles').insert([
+                        { id: userId, name, authorized: false, import_limit: 10 },
+                    ]);
+                    if (profileError) throw profileError;
+                }
+                showAuthMessage('Cadastro realizado! Aguarde a autorização de um administrador.', 'success');
+            } catch (err) {
+                console.error(err);
+                showAuthMessage(err.message || 'Erro inesperado. Tente novamente.', 'error');
+            } finally {
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar';
+                registerBtn.disabled = false;
+            }
+        }
+
+        async function handleLogout() {
+            if (currentUser && supabase) {
+                await supabase.from('session_logs').insert([{ user_id: currentUser.id, action: 'logout' }]);
+                await supabase.auth.signOut();
+            }
+            currentUser = null;
+            currentSession = null;
+            userProfile = null;
+            products = [];
+            scans = [];
+            showAuthSection();
+            userInfoElement.classList.add('hidden');
+        }
+
+        function showAuthMessage(message, type) {
+            authMessage.textContent = message;
+            authMessage.className = 'message-area';
+            if (type === 'error') authMessage.classList.add('error');
+            else if (type === 'success') authMessage.classList.add('success');
+            authMessage.classList.remove('hidden');
+        }
+
+        function switchTab(tabName) {
+            tabs.forEach((tab) => tab.classList.remove('active'));
+            tabContents.forEach((content) => content.classList.remove('active'));
+            const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+            const content = document.getElementById(tabName);
+            if (tab) tab.classList.add('active');
+            if (content) content.classList.add('active');
+            if (tabName === 'produtos') renderProducts();
+            else if (tabName === 'historico') loadSessionsHistory();
+        }
+
+        function toggleCountType() {
+            const countType = document.getElementById('count-type').value;
+            const fileImportSection = document.getElementById('file-import-section');
+            const importMessageArea = document.getElementById('import-message-area');
+            if (countType === 'avulsa') {
+                fileImportSection.classList.add('hidden');
+                importMessageArea.style.display = 'none'; // Esconde a mensagem também
+            } else {
+                fileImportSection.classList.remove('hidden');
+            }
+        }
+
+        async function handleImport() {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            const importMessageArea = document.getElementById('import-message-area');
+            if (!file) return showMessage('Selecione um arquivo CSV para importar.', 'error');
+            if (file.size > 5 * 1024 * 1024) return showMessage('O arquivo deve ter no máximo 5MB.', 'error');
+            if (file.type !== 'text/csv' && !file.name.toLowerCase().endsWith('.csv')) return showMessage('O arquivo deve ser do tipo CSV.', 'error');
+
+            let importLimit = 10;
+            if (supabase && currentUser) {
+                const { data: profile } = await supabase
+                    .from('user_profiles')
+                    .select('import_limit')
+                    .eq('id', currentUser.id)
+                    .single();
+                importLimit = profile?.import_limit ?? 10;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const lines = content.split(/\r?\n/).filter((line) => line.trim() !== '');
+                if (lines.length <= 1) return showMessage('Arquivo CSV sem dados.', 'error');
+                if (lines.length - 1 > importLimit) return showMessage(`Seu limite de importação é de ${importLimit} linhas. Arquivo contém ${lines.length - 1} linhas.`, 'error');
+
+                products = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    const codigo = (cols[0] || '').trim();
+                    const descricao = (cols[1] || '').trim();
+                    const quantidade_atual = parseInt(cols[2], 10) || 0;
+                    if (codigo && descricao) {
+                        products.push({ codigo, descricao, quantidade_atual, quantidade_contada: 0, is_counted: false });
+                    }
+                }
+                importMessageArea.textContent = `Produtos importados: ${products.length}`;
+                importMessageArea.style.display = 'block';
+                showMessage(`Importação concluída! ${products.length} produtos importados.`, 'success');
+                renderProducts();
+                updateProgress();
+            };
+            reader.readAsText(file);
+        }
+
+        async function startCounting() {
+            if (!supabase) return showMessage('SDK do Supabase indisponível.', 'error');
+            const countType = document.getElementById('count-type').value;
+            const sessionName = document.getElementById('session-name').value || `Contagem-${new Date().toLocaleString()}`;
+            if (countType === 'normal' && products.length === 0) return showMessage('Importe um arquivo CSV antes de iniciar a contagem.', 'error');
+
+            const { data: session, error } = await supabase
+                .from('counting_sessions')
+                .insert([{ user_id: currentUser.id, session_name: sessionName, count_type: countType, status: 'active', total_items: countType === 'normal' ? products.length : 0, counted_items: 0, scanned_items: 0 }])
+                .select()
+                .single();
+            if (error) return showMessage(error.message, 'error');
+            currentSession = session;
+            
+            if (countType === 'avulsa') {
+                document.getElementById('avulsa-scans-card').classList.remove('hidden');
+            }
+
+            if (countType === 'normal') {
+                for (const product of products) {
+                    const { error: productError } = await supabase
+                        .from('products')
+                        .insert([{ session_id: currentSession.id, codigo: product.codigo, descricao: product.descricao, quantidade_atual: product.quantidade_atual, quantidade_contada: 0, is_counted: false }]);
+                    if (productError) console.error('Erro ao salvar produto:', productError);
+                }
+            }
+
+            document.getElementById('start-count-btn').classList.add('hidden');
+            document.getElementById('end-count-btn').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('barcode-input').focus();
+            }, 100);
+            showMessage('Contagem iniciada! Use a aba Bipagem para escanear os produtos.', 'success');
+            switchTab('bipagem');
+        }
+
+        async function endCounting() {
+            if (!currentSession || !supabase) return;
+            const { error } = await supabase
+                .from('counting_sessions')
+                .update({ status: 'completed', ended_at: new Date().toISOString() })
+                .eq('id', currentSession.id);
+            if (error) return showMessage(error.message, 'error');
+
+            document.getElementById('start-count-btn').classList.remove('hidden');
+            document.getElementById('end-count-btn').classList.add('hidden');
+            showMessage('Contagem encerrada com sucesso!', 'success');
+            currentSession = null; products = []; scans = [];
+            document.getElementById('products-list').innerHTML = '<p id="no-products-msg">Nenhum produto importado ainda. Vá para a aba Configuração para importar um arquivo.</p>';
+            updateProgress();
+            document.getElementById('session-name').value = '';
+            document.getElementById('import-message-area').style.display = 'none';
+            document.getElementById('avulsa-scans-list').innerHTML = '';
+            document.getElementById('avulsa-scans-card').classList.add('hidden');
+        }
+
+        async function addScan() {
+            if (!currentSession) return showMessage('Inicie uma contagem antes de escanear produtos.', 'error');
+            const barcodeInput = document.getElementById('barcode-input');
+            const quantityInput = document.getElementById('quantity-input');
+            const codigo = barcodeInput.value.trim();
+            const quantity = parseInt(quantityInput.value, 10) || 1;
+            if (!codigo) return showMessage('Digite ou escaneie um código de barras.', 'error');
+
+            let product = null;
+            let productDescription = '';
+            
+            if (currentSession.count_type === 'normal') {
+                product = products.find((p) => p.codigo === codigo);
+				
+				if (!product) {
+					barcodeInput.value = ''; 
+					quantityInput.value = '1'; 
+					return showMessage('Produto não encontrado na lista importada.', 'error');
+				}
+				
+                product.quantidade_contada += quantity;
+                product.is_counted = true;
+                productDescription = product.descricao;
+                
+                const { error } = await supabase
+                    .from('products')
+                    .update({ quantidade_contada: product.quantidade_contada, is_counted: true })
+                    .eq('session_id', currentSession.id)
+                    .eq('codigo', codigo);
+                if (error) console.error('Erro ao atualizar produto:', error);
+            } else {
+                const { data: existingProduct } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('session_id', currentSession.id)
+                    .eq('codigo', codigo)
+                    .single();
+                    
+                if (existingProduct) {
+                    const newQuantity = existingProduct.quantidade_contada + quantity;
+                    const { error } = await supabase
+                        .from('products')
+                        .update({ quantidade_contada: newQuantity, is_counted: true })
+                        .eq('id', existingProduct.id);
+                    if (error) console.error('Erro ao atualizar produto:', error);
+                    productDescription = existingProduct.descricao;
+                } else {
+                    const { data: newProduct, error } = await supabase
+                        .from('products')
+                        .insert([{ session_id: currentSession.id, codigo, descricao: 'Produto avulso', quantidade_atual: 0, quantidade_contada: quantity, is_counted: true }])
+                        .select()
+                        .single();
+                    if (error) console.error('Erro ao criar produto:', error);
+                    productDescription = 'Produto avulso';
+                }
+                
+                const avulsaList = document.getElementById('avulsa-scans-list');
+                const scanItem = document.createElement('div');
+                scanItem.className = 'scan-item';
+                scanItem.innerHTML = `
+                    <span class="scan-code">${codigo}</span>
+                    <span class="scan-qty">Qtd: ${quantity}</span>
+                `;
+                avulsaList.prepend(scanItem); 
+            }
+
+            const { error: scanError } = await supabase
+                .from('scans')
+                .insert([{ session_id: currentSession.id, codigo, quantity, description: productDescription }]);
+            if (scanError) console.error('Erro ao registrar scan:', scanError);
+
+            const { data: sessionData } = await supabase
+                .from('counting_sessions')
+                .select('counted_items, scanned_items')
+                .eq('id', currentSession.id)
+                .single();
+                
+            const newCountedItems = currentSession.count_type === 'normal' ? 
+                products.filter(p => p.is_counted).length : 
+                (sessionData?.counted_items || 0) + (product ? 0 : 1);
+            const newScannedItems = (sessionData?.scanned_items || 0) + quantity;
+            
+            const { error: sessionError } = await supabase
+                .from('counting_sessions')
+                .update({ counted_items: newCountedItems, scanned_items: newScannedItems })
+                .eq('id', currentSession.id);
+            if (sessionError) console.error('Erro ao atualizar sessão:', sessionError);
+            
+            currentSession.counted_items = newCountedItems;
+            currentSession.scanned_items = newScannedItems;
+            
+            showMessage(`Produto ${codigo} (${productDescription}) adicionado com quantidade ${quantity}.`, 'success');
+            barcodeInput.value = '';
+            quantityInput.value = '1';
+            barcodeInput.focus();
+            
+            if (currentSession.count_type === 'normal') {
+                renderProducts();
+            }
+            updateProgress();
+
+            // AJUSTE 1: Checar se a contagem com arquivo foi concluída
+            if (currentSession.count_type === 'normal' && currentSession.total_items > 0 && currentSession.counted_items === currentSession.total_items) {
+                showMessage('Contagem Efetuada 100%!', 'error');
+            }
+        }
+
+        function renderProducts() {
+            const productsList = document.getElementById('products-list');
+            if (!products || products.length === 0) {
+                productsList.innerHTML = '<p id="no-products-msg">Nenhum produto importado ainda. Vá para a aba Configuração para importar um arquivo.</p>';
+                return;
+            }
+            productsList.innerHTML = '';
+            products.forEach((product) => {
+                const item = document.createElement('div');
+                item.className = 'product-item';
+                item.innerHTML = `
+                    <div class="product-info">
+                        <div class="product-code">${product.codigo}</div>
+                        <div class="product-desc">${product.descricao}</div>
+                    </div>
+                    <div class="product-count">
+                        ${product.is_counted ? `<span class="count-badge">${product.quantidade_contada}</span>` : '<span style="color: var(--danger);">Pendente</span>'}
+                    </div>
+                `;
+                productsList.appendChild(item);
+            });
+        }
+
+        function updateProgress() {
+            if (!currentSession) {
+                document.getElementById('progress-fill').style.width = '0%';
+                document.getElementById('progress-text').textContent = '0%';
+                document.getElementById('total-items').textContent = '0';
+                document.getElementById('counted-items').textContent = '0';
+                document.getElementById('missing-items').textContent = '0';
+                document.getElementById('scanned-items').textContent = '0';
+                return;
+            }
+            const total = currentSession.total_items || 0;
+            const counted = currentSession.counted_items || 0;
+            const scanned = currentSession.scanned_items || 0;
+            const progress = total > 0 ? Math.round((counted / total) * 100) : 0;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('progress-text').textContent = `${progress}%`;
+            document.getElementById('total-items').textContent = total;
+            document.getElementById('counted-items').textContent = counted;
+            document.getElementById('missing-items').textContent = total - counted;
+            document.getElementById('scanned-items').textContent = scanned;
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `<p>${message}</p>`;
+            messageArea.className = 'message-area';
+            if (type === 'error') messageArea.classList.add('error');
+            else if (type === 'success') messageArea.classList.add('success');
+        }
+
+        async function loadUserData() {
+            if (!supabase || !currentUser) return;
+            // Carregar sessões ativas
+            const { data: activeSessions } = await supabase
+                .from('counting_sessions')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1);
+            if (activeSessions && activeSessions.length > 0) {
+                currentSession = activeSessions[0];
+                const { data: sessionProducts } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('session_id', currentSession.id);
+                if (sessionProducts && sessionProducts.length > 0) {
+                    products = sessionProducts.map(p => ({
+                        codigo: p.codigo,
+                        descricao: p.descricao,
+                        quantidade_atual: p.quantidade_atual,
+                        quantidade_contada: p.quantidade_contada,
+                        is_counted: p.is_counted
+                    }));
+                }
+                document.getElementById('start-count-btn').classList.add('hidden');
+                document.getElementById('end-count-btn').classList.remove('hidden');
+                updateProgress();
+            }
+        }
+
+        async function loadSessionsHistory() {
+            if (!supabase || !currentUser) return;
+            const { data: sessions, error } = await supabase
+                .from('counting_sessions')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            if (error) return console.error('Erro ao carregar histórico:', error);
+            const sessionsList = document.getElementById('sessions-list');
+            if (!sessions || sessions.length === 0) {
+                sessionsList.innerHTML = '<p id="no-sessions-msg">Nenhuma sessão encontrada.</p>';
+                return;
+            }
+            sessionsList.innerHTML = '';
+            sessions.forEach((session) => {
+                const item = document.createElement('div');
+                item.className = 'session-item';
+                const startedAt = new Date(session.created_at).toLocaleString();
+                const endedAt = session.ended_at ? new Date(session.ended_at).toLocaleString() : 'Em andamento';
+                // AJUSTE 2: Botão de excluir agora aparece para todas as sessões
+                item.innerHTML = `
+                    <div class="session-name">${session.session_name}</div>
+                    <div class="session-details">
+                        <span>${session.count_type === 'normal' ? 'Com arquivo' : 'Avulsa'}</span>
+                        <span>Início: ${startedAt}</span>
+                        <span>Término: ${endedAt}</span>
+                    </div>
+                    <div class="session-actions">
+                        <button class="session-action-btn" data-session-id="${session.id}" onclick="viewSessionDetails('${session.id}')">
+                            <i class="fas fa-eye"></i> Detalhes
+                        </button>
+                        <button class="session-action-btn success" data-session-id="${session.id}" onclick="exportSessionData('${session.id}')">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                        <button class="session-action-btn danger" data-session-id="${session.id}" onclick="deleteSession('${session.id}')">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                `;
+                sessionsList.appendChild(item);
+            });
+        }
+
+        async function exportCurrentSessionData() {
+            if (!currentSession) return showMessage('Nenhuma sessão ativa para exportar.', 'error');
+            await exportSessionData(currentSession.id);
+        }
+        
+        async function exportSessionData(sessionId) {
+            if (!supabase) return showMessage('SDK do Supabase indisponível.', 'error');
+            const exportFormat = document.getElementById('export-format').value;
+            const exportType = document.getElementById('export-type').value;
+
+            const { data: session } = await supabase.from('counting_sessions').select('*').eq('id', sessionId).single();
+            if (!session) return showMessage('Sessão não encontrada.', 'error');
+
+            let content = '';
+            let filename = `contagem-${session.session_name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}`;
+            
+            if (exportType === 'grouped') {
+                const { data: productsData } = await supabase.from('products').select('*').eq('session_id', sessionId);
+                if (!productsData || productsData.length === 0) return showMessage('Nenhum produto para exportar.', 'error');
+
+                const checkboxes = document.querySelectorAll('#export-fields-grouped input[type="checkbox"]:checked');
+                const headers = Array.from(checkboxes).map(cb => cb.labels[0].textContent);
+                const fields = Array.from(checkboxes).map(cb => cb.dataset.field);
+
+                content = headers.join(',') + '\n';
+                productsData.forEach((p) => {
+                    const row = fields.map(field => `${p[field] || ''}`); // Adiciona aspas para evitar problemas com vírgulas (Ogre: Tirei as aspas "${p[field] || ''}")
+                    content += row.join(',') + '\n';
+                });
+
+            } else { // 'detailed'
+                const { data: scansData } = await supabase.from('scans').select('*').eq('session_id', sessionId).order('created_at');
+                if (!scansData || scansData.length === 0) return showMessage('Nenhum scan para exportar.', 'error');
+
+                const checkboxes = document.querySelectorAll('#export-fields-detailed input[type="checkbox"]:checked');
+                const headers = Array.from(checkboxes).map(cb => cb.labels[0].textContent);
+                const fields = Array.from(checkboxes).map(cb => cb.dataset.field);
+
+                content = headers.join(',') + '\n';
+                scansData.forEach((s) => {
+                    const row = fields.map(field => {
+                        if (field === 'created_at') {
+                            return `"${new Date(s.created_at).toLocaleString()}"`; 
+                        }
+                        return `${s[field] || ''}`; // Adiciona aspas // Ogre: Tirei as aspas
+                    });
+                    content += row.join(',') + '\n';
+                });
+            }
+
+            const blob = new Blob([content], { type: exportFormat === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.${exportFormat}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage(`Dados exportados com sucesso: ${filename}.${exportFormat}`, 'success');
+        }
+
+
+        async function clearAllHistory() {
+            if (!supabase || !currentUser) return;
+            if (!confirm('Tem certeza que deseja excluir TODO o histórico? Esta ação não pode ser desfeita.')) return;
+            const { data: sessions } = await supabase
+                .from('counting_sessions')
+                .select('id')
+                .eq('user_id', currentUser.id);
+            if (sessions && sessions.length > 0) {
+                const sessionIds = sessions.map(s => s.id);
+                await supabase.from('scans').delete().in('session_id', sessionIds);
+                await supabase.from('products').delete().in('session_id', sessionIds);
+            }
+            const { error } = await supabase
+                .from('counting_sessions')
+                .delete()
+                .eq('user_id', currentUser.id);
+            if (error) return showMessage(error.message, 'error');
+            showMessage('Histórico completo excluído com sucesso!', 'success');
+            loadSessionsHistory();
+        }
+
+        async function viewSessionDetails(sessionId) {
+            alert(`Visualizar detalhes da sessão ${sessionId}`);
+        }
+
+        async function deleteSession(sessionId) {
+            if (!supabase) return;
+            if (!confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) return;
+            await supabase.from('scans').delete().eq('session_id', sessionId);
+            await supabase.from('products').delete().eq('session_id', sessionId);
+            const { error } = await supabase
+                .from('counting_sessions')
+                .delete()
+                .eq('id', sessionId);
+            if (error) {
+                alert('Erro ao excluir sessão: ' + error.message);
+                return;
+            }
+            if (currentSession && currentSession.id.toString() === sessionId) {
+                currentSession = null;
+                products = [];
+                document.getElementById('start-count-btn').classList.remove('hidden');
+                document.getElementById('end-count-btn').classList.add('hidden');
+                updateProgress();
+            }
+            alert('Sessão excluída com sucesso!');
+            loadSessionsHistory();
+        }
+    </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab)?.classList.add('active');
+        });
+    });
+
+    // ===== Menu Hambúrguer =====
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    if (hamburger && sidebar && overlay) {
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        sidebar.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', e => {
+                e.preventDefault();
+                const tab = item.dataset.tab;
+                if (tab) {
+                    const mainTab = document.querySelector(`.nav-tabs .tab[data-tab="${tab}"]`);
+                    if (mainTab) {
+                        mainTab.click();
+                    } else { 
+                       switchTab(tab);
+                    }
+                } else if (item.id === 'sidebar-logout') {
+                    document.getElementById('logout-btn')?.click();
+                }
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="description" content="SmartCount - Sistema de contagem de estoque eficiente e fácil de usar" />
+    <meta name="keywords" content="contagem, estoque, inventário, gestão, produtos" />
+    <meta name="author" content="ServeAuto" />
+    <meta name="theme-color" content="#2563eb" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SmartCount" />
+    <meta name="msapplication-navbutton-color" content="#2563eb" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ServeAuto SmartCount" />
+    <meta property="og:description" content="Sistema de contagem de estoque eficiente e fácil de usar" />
+    <meta property="og:site_name" content="SmartCount" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="ServeAuto SmartCount" />
+    <meta property="twitter:description" content="Sistema de contagem de estoque eficiente e fácil de usar" />
+    
+    <title>ServeAuto SmartCount 1.0</title>
+    
+    <!-- Favicon and PWA -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Inicialização do Supabase
+        const supabaseUrl = 'https://dkpqjtbrmxozynpxdurv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcHFqdGJybXhvenlucHhkdXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjIyNDUsImV4cCI6MjA3MjIzODI0NX0.EVXv7iH70zDNb_vrILJMVb2ccBWFWA0sAU4CoPSRh54';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    </script>
+</head>
+<body>
+    <!-- Início do conteúdo da aplicação -->
+    <div id="app">
+        <header>
+            <div class="header-content">
+                <div class="app-title">ServeAuto SmartCount</div>
+                <div class="app-version">1.0</div>
+                <div id="user-info" class="user-info hidden"></div>
+            </div>
+        </header>
+
+        <div class="hamburger" id="hamburger"><i class="fas fa-bars"></i></div>
+
+        <div class="sidebar" id="sidebar">
+          <a href="#" class="menu-item" data-tab="configuracao">⚙️ <span>Configuração</span></a>
+          <a href="#" class="menu-item" data-tab="contagem">📋 <span>Contagem</span></a>
+          <a href="#" class="menu-item" data-tab="bipagem">📦 <span>Bipagem</span></a>
+          <a href="#" class="menu-item" data-tab="produtos">📦 <span>Produtos</span></a>
+          <a href="#" class="menu-item" data-tab="exportar">⬇️ <span>Exportar</span></a>
+          <a href="#" class="menu-item" data-tab="historico">🕑 <span>Histórico</span></a>
+          <a href="#" class="menu-item" id="sidebar-logout">🚪 <span>Sair</span></a>
+        </div>
+
+        <div class="overlay" id="overlay"></div>
+
+        <div id="auth-section" class="auth-container">
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="login-tab" data-tab="login">Login</div>
+                <div class="auth-tab" id="register-tab" data-tab="register">Cadastro</div>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" placeholder="Seu e-mail" />
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" placeholder="Sua senha" />
+                </div>
+                <button type="submit" id="login-btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            </form>
+
+            <form id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="reg-name">Nome Completo</label>
+                    <input type="text" id="reg-name" placeholder="Seu nome completo" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">E-mail</label>
+                    <input type="email" id="reg-email" placeholder="Seu e-mail" />
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Senha</label>
+                    <input type="password" id="reg-password" placeholder="Sua senha (mín. 6 caracteres)" />
+                </div>
+                <button type="submit" id="register-btn"><i class="fas fa-user-plus"></i> Cadastrar</button>
+            </form>
+
+            <div id="auth-message" class="message-area hidden"></div>
+        </div>
+
+        <div id="main-app" class="hidden">
+            <div class="nav-tabs">
+                <div class="tab active" data-tab="configuracao"><i class="fas fa-cog"></i> Configuração</div>
+                <div class="tab" data-tab="contagem"><i class="fas fa-clipboard-list"></i> Contagem</div>
+                <div class="tab" data-tab="bipagem"><i class="fas fa-barcode"></i> Bipagem</div>
+                <div class="tab" data-tab="produtos"><i class="fas fa-boxes"></i> Produtos</div>
+                <div class="tab" data-tab="exportar"><i class="fas fa-file-export"></i> Exportar</div>
+                <div class="tab" data-tab="historico"><i class="fas fa-history"></i> Histórico</div>
+                <div class="tab" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</div>
+            </div>
+
+            <div class="container">
+                <div id="configuracao" class="tab-content active">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-cog"></i> Configuração de Contagem</div>
+                        <div class="form-group">
+                            <label for="count-type">Tipo de Contagem</label>
+                            <select id="count-type">
+                                <option value="normal">Contagem com Arquivo</option>
+                                <option value="avulsa">Contagem Avulsa</option>
+                            </select>
+                        </div>
+                        <div id="file-import-section">
+                            <div class="form-group">
+                                <label for="csv-file">Importar Arquivo CSV</label>
+                                <input type="file" id="csv-file" accept=".csv" />
+                            </div>
+                            <button id="import-csv-btn"><i class="fas fa-file-import"></i> Importar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="session-name">Descrição da Contagem</label>
+                            <input type="text" id="session-name" placeholder="Descrição da contagem" />
+                        </div>
+                        <div class="form-group">
+                            <label for="session-desc">Observações</label>
+                            <textarea id="session-desc" placeholder="Observações adicionais (opcional)" rows="3"></textarea>
+                        </div>
+                        <div id="import-message-area"></div>
+                    </div>
+                </div>
+
+                <div id="contagem" class="tab-content">
+                    <div class="count-type-indicator" id="count-type-indicator">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="count-type-text">Tipo: Normal</span>
+                    </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-play-circle"></i> Controle de Contagem</div>
+                        <button id="start-count" class="success"><i class="fas fa-play"></i> Iniciar Contagem</button>
+                        <button id="end-count" class="danger hidden"><i class="fas fa-stop"></i> Encerrar Contagem</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-chart-line"></i> Progresso da Contagem</div>
+                        <div id="progress-bar" class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                            <div id="progress-text" class="progress-text">0%</div>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-box">
+                                <div id="total-products" class="stat-value">0</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="scanned-products" class="stat-value">0</div>
+                                <div class="stat-label">Contados</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="remaining-products" class="stat-value">0</div>
+                                <div class="stat-label">Faltando</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="completion-rate" class="stat-value">0%</div>
+                                <div class="stat-label">Progresso</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bipagem" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-barcode"></i> Área de Bipagem</div>
+                        <form id="scan-form">
+                            <div class="form-group">
+                                <label for="scan-input">Código de Barras</label>
+                                <input type="text" id="scan-input" placeholder="Escaneie ou digite o código" autocomplete="off" />
+                            </div>
+                            <div class="form-group">
+                                <label for="scan-qty">Quantidade (padrão: 1)</label>
+                                <input type="number" id="scan-qty" value="1" min="1" />
+                            </div>
+                            <button type="submit" id="scan-btn"><i class="fas fa-plus-circle"></i> Adicionar</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-info-circle"></i> Área de Mensagens</div>
+                        <div id="scan-message" class="message-area">
+                            <p>Nenhuma operação realizada ainda. Escaneie um código ou digite manualmente.</p>
+                        </div>
+                    </div>
+                    <div id="avulsa-scans-card" class="card hidden">
+                        <div class="card-title"><i class="fas fa-history"></i> Últimas Bipagens (Contagem Avulsa)</div>
+                        <div id="avulsa-scans-list"></div>
+                    </div>
+                </div>
+
+                <div id="produtos" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-boxes"></i> Lista de Produtos</div>
+                        <div id="products-list" class="product-list">
+                            <p id="no-products-msg">Nenhum produto importado ainda. Vá para a aba Configuração para importar um arquivo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="exportar" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-file-export"></i> Exportar Dados</div>
+                        
+                        <div class="form-group">
+                            <label for="export-format">Formato de Exportação</label>
+                            <select id="export-format">
+                                <option value="csv">CSV</option>
+                                <option value="txt">TXT</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="export-type">Tipo de Exportação</label>
+                            <select id="export-type">
+                                <option value="grouped">Agrupado por código</option>
+                                <option value="detailed">Linha a linha</option>
+                            </select>
+                        </div>
+                        
+                        <div id="export-fields-grouped" class="export-fields-group">
+                            <legend>Campos para exportar (Agrupado)</legend>
+                            <div class="checkbox-container">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="codigo" checked disabled>
+                                    <label>Código</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="quantidade_contada" checked disabled>
+                                    <label>Quantidade Contada</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="descricao">
+                                    <label>Descrição</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="export-fields-detailed" class="export-fields-group hidden">
+                            <legend>Campos para exportar (Detalhado)</legend>
+                            <div class="checkbox-container">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="codigo" checked disabled>
+                                    <label>Código</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="quantidade_contada" checked disabled>
+                                    <label>Quantidade Contada</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="descricao">
+                                    <label>Descrição</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" class="export-field" data-field="data_hora" checked>
+                                    <label>Data/Hora</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="export-btn" class="success"><i class="fas fa-download"></i> Exportar Sessão Atual</button>
+                    </div>
+                </div>
+
+                <div id="historico" class="tab-content">
+                    <div class="card">
+                        <div class="card-title"><i class="fas fa-history"></i> Sessões Anteriores</div>
+                        <div id="sessions-list" class="session-list">
+                            <p id="no-sessions-msg">Nenhuma sessão encontrada.</p>
+                        </div>
+                        <button id="clear-history-btn" class="danger"><i class="fas fa-trash"></i> Limpar Histórico Completo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">ServeAuto SmartCount 1.0 &copy; 2023 - Contagem Inteligente de Estoque</div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner large"></div>
+            <p id="loading-text" class="loading-text">Carregando...</p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/menu.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+
+</body>
+</html>

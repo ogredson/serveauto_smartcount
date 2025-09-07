@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        input, button { padding: 10px; margin: 5px; font-size: 16px; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background-color: #ffebee; color: #c62828; }
+        .success { background-color: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Test - SmartCount</h1>
+        
+        <div id="supabase-status"></div>
+        
+        <form id="test-form">
+            <input type="text" id="test-input" placeholder="Digite um código" autofocus>
+            <input type="number" id="test-qty" value="1" min="1">
+            <button type="submit" id="test-btn">Testar</button>
+        </form>
+        
+        <div id="messages"></div>
+        
+        <div id="console-log"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://dkpqjtbrmxozynpxdurv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcHFqdGJybXhvenlucHhkdXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NjIyNDUsImV4cCI6MjA3MjIzODI0NX0.EVXv7iH70zDNb_vrILJMVb2ccBWFWA0sAU4CoPSRh54';
+        
+        let supabaseClient;
+        
+        try {
+            supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            document.getElementById('supabase-status').innerHTML = '<div class="message success">✅ Supabase conectado com sucesso</div>';
+            console.log('Supabase Client criado:', supabaseClient);
+        } catch (error) {
+            document.getElementById('supabase-status').innerHTML = '<div class="message error">❌ Erro ao conectar Supabase: ' + error.message + '</div>';
+            console.error('Erro Supabase:', error);
+        }
+        
+        // Elementos DOM
+        const form = document.getElementById('test-form');
+        const input = document.getElementById('test-input');
+        const qty = document.getElementById('test-qty');
+        const btn = document.getElementById('test-btn');
+        const messages = document.getElementById('messages');
+        const consoleLog = document.getElementById('console-log');
+        
+        function showMessage(msg, type = 'success') {
+            const div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.textContent = msg;
+            messages.appendChild(div);
+            
+            setTimeout(() => {
+                div.remove();
+            }, 3000);
+        }
+        
+        function logToPage(msg) {
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleTimeString() + ': ' + msg;
+            consoleLog.appendChild(div);
+            console.log(msg);
+        }
+        
+        // Event listeners
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            logToPage('Form submit event triggered');
+            
+            const code = input.value.trim();
+            const quantity = parseInt(qty.value) || 1;
+            
+            if (!code) {
+                showMessage('Por favor, digite um código', 'error');
+                return;
+            }
+            
+            logToPage(`Processando: código=${code}, quantidade=${quantity}`);
+            showMessage(`Código processado: ${code} (Qty: ${quantity})`);
+            
+            // Limpar campos
+            input.value = '';
+            qty.value = '1';
+            input.focus();
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                logToPage('Enter key pressed in input');
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        btn.addEventListener('click', function(e) {
+            logToPage('Button clicked');
+        });
+        
+        // Auto-focus no input
+        setTimeout(() => {
+            input.focus();
+            logToPage('Input focused automatically');
+        }, 100);
+        
+        logToPage('Debug test initialized');
+    </script>
+</body>
+</html>

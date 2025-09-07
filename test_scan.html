@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Scan</title>
+</head>
+<body>
+    <h1>Teste de Funcionalidade de Scan</h1>
+    
+    <form id="scan-form">
+        <div>
+            <label for="scan-input">Código de Barras:</label>
+            <input type="text" id="scan-input" placeholder="Digite um código" />
+        </div>
+        <div>
+            <label for="scan-qty">Quantidade:</label>
+            <input type="number" id="scan-qty" value="1" min="1" />
+        </div>
+        <button type="submit" id="scan-btn">Adicionar</button>
+    </form>
+    
+    <div id="message-area"></div>
+    <div id="scan-list"></div>
+    
+    <script>
+        const elements = {
+            scanForm: document.getElementById('scan-form'),
+            scanInput: document.getElementById('scan-input'),
+            scanQty: document.getElementById('scan-qty'),
+            scanBtn: document.getElementById('scan-btn'),
+            messageArea: document.getElementById('message-area'),
+            scanList: document.getElementById('scan-list')
+        };
+        
+        let scans = [];
+        
+        function showMessage(message, type = 'info') {
+            elements.messageArea.innerHTML = `<p style="color: ${type === 'error' ? 'red' : 'green'}">${message}</p>`;
+        }
+        
+        function addScan(code, qty) {
+            console.log('Adicionando scan:', { code, qty });
+            
+            const scan = {
+                code: code,
+                qty: qty,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            scans.push(scan);
+            
+            // Adicionar à lista visual
+            const scanItem = document.createElement('div');
+            scanItem.innerHTML = `<p><strong>${code}</strong> - Qty: ${qty} - ${scan.timestamp}</p>`;
+            elements.scanList.appendChild(scanItem);
+            
+            showMessage(`Código "${code}" adicionado com sucesso!`, 'success');
+            
+            // Limpar campos
+            elements.scanInput.value = '';
+            elements.scanQty.value = '1';
+            elements.scanInput.focus();
+        }
+        
+        function handleScan(e) {
+            e.preventDefault();
+            console.log('handleScan chamado');
+            
+            const code = elements.scanInput.value.trim();
+            const qty = parseInt(elements.scanQty.value) || 1;
+            
+            if (!code) {
+                showMessage('Por favor, informe um código.', 'error');
+                return;
+            }
+            
+            addScan(code, qty);
+        }
+        
+        function processScan() {
+            console.log('processScan chamado');
+            const fakeEvent = { preventDefault: () => {} };
+            handleScan(fakeEvent);
+        }
+        
+        // Event listeners
+        elements.scanForm.addEventListener('submit', handleScan);
+        
+        elements.scanInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processScan();
+            }
+        });
+        
+        // Auto focus
+        elements.scanInput.focus();
+        
+        console.log('Teste de scan carregado');
+    </script>
+</body>
+</html>

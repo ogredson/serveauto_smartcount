@@ -1,0 +1,38 @@
+{
+  "name": "smartcount",
+  "version": "1.0.0",
+  "description": "Sistema de contagem inteligente para inventário - ServeAuto",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 8000 || npx serve -s . -p 8000",
+    "setup": "node setup-env.js",
+    "deploy": "vercel --prod",
+    "preview": "vercel"
+  },
+  "keywords": [
+    "inventory",
+    "counting",
+    "barcode",
+    "pwa",
+    "supabase",
+    "vercel"
+  ],
+  "author": "ServeAuto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "seu-repositorio-github"
+  },
+  "homepage": "https://seu-dominio.vercel.app",
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
