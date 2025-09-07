@@ -4,10 +4,9 @@
   "description": "Sistema de contagem inteligente para inventário - ServeAuto",
   "main": "index.html",
   "scripts": {
-    "dev": "python -m http.server 8000 || npx serve -s . -p 8000",
-    "setup": "node setup-env.js",
-    "deploy": "vercel --prod",
-    "preview": "vercel"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "inventory",
@@ -25,7 +24,7 @@
   },
   "homepage": "https://seu-dominio.vercel.app",
   "devDependencies": {
-    "vercel": "^32.0.0"
+    "vite": "^5.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
